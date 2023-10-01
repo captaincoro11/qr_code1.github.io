@@ -1,0 +1,57 @@
+#QR_head{
+    color:white;
+    display: flex;
+    justify-content: center;
+}
+body{
+    background-color: black;
+}
+#startScan{
+    background-color: green;
+    border: none;
+    width: 6rem;
+    height: 2.5rem;
+    cursor: pointer;
+    color: white;
+   
+}
+
+#results{
+    color: white;
+
+
+}
+#switchCamera{
+    background-color: green;
+    border: none;
+    width: 6rem;
+    height: 2.5rem;
+    cursor: pointer;
+    color: white;
+
+   margin-left: 17.5rem;
+}
+.button_after{
+    display: flex;
+}
+#scanAgain{
+    background-color: green;
+    border: none;
+    width: 6rem;
+    height: 2.5rem;
+    cursor: pointer;
+    color: white;
+   margin-left: 4.5rem;
+
+}
+#closeScanner{
+    
+    background-color: green;
+    border: none;
+    width: 6rem;
+    height: 2.5rem;
+    cursor: pointer;
+    color: white;
+   margin-left: 4.5rem;
+
+}

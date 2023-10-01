@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QR Code Scanner</title>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+<body>
+    <h1 id="QR_head">QR Code Scanner</h1>
+    <video id="scanner" style="width: 100%; max-width: 640px;"></video>
+    <button id="startScan">Start Scanning</button>
+    <ul id="results"></ul>
+    <p id="scanMessage" style="display: none;">QR code scanned.</p>
+    <div class="button_after">
+        <button id="switchCamera">Switch Camera</button>
+
+    <button id="scanAgain" style="display: none;">Scan Another QR Code</button>
+    <button id="closeScanner" style="display: none;">Close Scanner</button>
+</div>
+
+    <!-- Include Instascan.js -->
+    <script src="https://cdn.rawgit.com/schmich/instascan-builds/master/instascan.min.js"></script>
+
+    <!-- Include XLSX.js for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.4/xlsx.full.min.js"></script>
+
+    <script>
+        const scanner = new Instascan.Scanner({ video: document.getElementById('scanner') });
+        const resultsList = document.getElementById('results');
+        const scanAgainButton = document.getElementById('scanAgain');
+        const closeScannerButton = document.getElementById('closeScanner');
+        const scanMessage = document.getElementById('scanMessage');
+        const scannedData = new Set(); // Set to store scanned data
+        const workbook = XLSX.utils.book_new(); // Create a new workbook
+        const ws = XLSX.utils.aoa_to_sheet([['Name', 'College', 'Mobile', 'Event', 'ShauryaID']]); // Create a worksheet
+
+        // Add the worksheet to the workbook
+        XLSX.utils.book_append_sheet(workbook, ws, 'Scanned Data');
+
+
+        // Initialize variables for camera switching
+let currentCameraIndex = 0; // Index of the currently active camera
+
+// Function to switch to the next available camera
+function switchCamera() {
+    Instascan.Camera.getCameras().then(function (cameras) {
+        if (cameras.length > 1) {
+            currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
+            scanner.stop(); // Stop the current scanner
+            scanner.start(cameras[currentCameraIndex]); // Start the new camera
+        }
+    }).catch(function (error) {
+        console.error(error);
+    });
+}
+
+// Add a click event listener to the "Switch Camera" button
+document.getElementById('switchCamera').addEventListener('click', switchCamera);
+
+        // Listen for scan events
+        scanner.addListener('scan', function (content) {
+            if (scannedData.has(content)) {
+                // Display a message if the QR code has already been scanned
+                displayMessage(`QR code "${content}" has already been used.`);
+            } else {
+                // Store the QR code content and display it in the results
+                scannedData.add(content);
+                displayScannedData(content);
+                scanMessage.style.display = 'block'; // Display the scan message
+
+                // Parse the QR code data and remove the part before the colon
+                const qrData = content.split('\n');
+                if (qrData.length === 5) {
+                    const [name, college, mobile, event, shauryaID] = qrData.map(entry => entry.split(':')[1].trim());
+
+                    // Add the data to the worksheet
+                    XLSX.utils.sheet_add_aoa(ws, [[name, college, mobile, event, shauryaID]], { origin: -1 });
+
+                    // Show the buttons to either scan again or close the scanner
+                    scanAgainButton.style.display = 'block';
+                    closeScannerButton.style.display = 'block';
+
+                    // Disable the start scanning button
+                    document.getElementById('startScan').disabled = true;
+                }
+            }
+        });
+
+        // Start scanning when the button is clicked
+        document.getElementById('startScan').addEventListener('click', function () {
+            Instascan.Camera.getCameras().then(function (cameras) {
+                if (cameras.length > 0) {
+                    scanner.start(cameras[0]); // Use the first available camera
+                } else {
+                    console.error('No cameras found.');
+                }
+            }).catch(function (error) {
+                console.error(error);
+            });
+        });
+
+        // Scan another QR code
+        scanAgainButton.addEventListener('click', function () {
+            scanAgainButton.style.display = 'none';
+            closeScannerButton.style.display = 'none';
+            resultsList.innerHTML = ''; // Clear previous results
+            scanMessage.style.display = 'none'; // Hide the scan message
+            document.getElementById('startScan').disabled = false; // Enable start scanning button
+        });
+
+       // Close the scanner
+closeScannerButton.addEventListener('click', function () {
+    scanner.stop(); // Stop the scanner
+    scanAgainButton.style.display = 'none';
+    closeScannerButton.style.display = 'none';
+    document.getElementById('startScan').disabled = false; // Enable start scanning button
+
+    // Clear the results list to hide scanned data
+    resultsList.innerHTML = '';
+
+    // Trigger download of the Excel file
+    XLSX.writeFile(workbook, 'scanned_data.xlsx');
+});
+
+
+        // Display scanned data
+        function displayScannedData(content) {
+            const listItem = document.createElement('li');
+            listItem.textContent = content;
+            resultsList.appendChild(listItem);
+        }
+
+        // Display a message
+        function displayMessage(message) {
+            const messageElement = document.createElement('p');
+            messageElement.textContent = message;
+            resultsList.appendChild(messageElement);
+        }
+    </script>
+</body>
+</html>
+
